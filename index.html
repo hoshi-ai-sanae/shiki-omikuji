@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四季の巡り おみくじ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Noto Serif JP Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Serif JP', serif;
+            background-color: #fdfbf7;
+            color: #333;
+        }
+
+        /* 共通アニメーション */
+        .fade-in {
+            animation: fadeIn 0.8s ease-in forwards;
+            opacity: 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 参拝：鈴のアニメーション */
+        @keyframes swing {
+            0% { transform: rotate(0deg); }
+            20% { transform: rotate(20deg); }
+            40% { transform: rotate(-15deg); }
+            60% { transform: rotate(10deg); }
+            80% { transform: rotate(-5deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .animate-bell {
+            animation: swing 1s ease-in-out;
+            transform-origin: top center;
+        }
+
+        /* 参拝：お賽銭のアニメーション */
+        @keyframes drop {
+            0% { transform: translateY(-30px); opacity: 0; }
+            30% { opacity: 1; }
+            70% { transform: translateY(40px); opacity: 1; }
+            100% { transform: translateY(60px); opacity: 0; }
+        }
+        .animate-coin {
+            animation: drop 1s ease-in forwards;
+        }
+
+        /* おみくじ筒のアニメーション */
+        .omikuji-container {
+            position: relative;
+            width: 100px;
+            height: 150px;
+            margin: 0 auto;
+        }
+        .omikuji-stick {
+            position: absolute;
+            width: 8px;
+            height: 80px;
+            background-color: #e6c280;
+            border: 1px solid #c8925e;
+            top: 30px;
+            left: 46px;
+            z-index: 1;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .omikuji-cylinder {
+            position: absolute;
+            width: 50px;
+            height: 100px;
+            background-color: #c04f4f; /* 朱色の筒 */
+            border-radius: 4px;
+            border: 2px solid #8b2a2a;
+            bottom: 0;
+            left: 25px;
+            z-index: 2;
+            transform-origin: bottom center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.2rem;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            box-shadow: inset -5px 0 10px rgba(0,0,0,0.2);
+        }
+        .animate-shake-cylinder {
+            animation: shakeCylinder 0.3s infinite;
+        }
+        @keyframes shakeCylinder {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-12deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(12deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .animate-stick-out {
+            transform: translateY(-60px) rotate(5deg);
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex justify-center min-h-screen bg-[#fdfbf7]">
+
+    <div class="w-full max-w-md bg-white shadow-xl min-h-screen relative overflow-hidden flex flex-col">
+        
+        <header class="bg-[#f0eadd] text-center py-4 shadow-sm z-10">
+            <h1 class="text-xl font-bold tracking-widest text-[#5c4d43]">四季の巡り おみくじ</h1>
+        </header>
+
+        <main class="flex-grow flex flex-col items-center justify-start p-6 overflow-y-auto" id="main-content">
+            
+            <!-- 【画面1】 ホーム画面 -->
+            <div id="screen-home" class="text-center w-full fade-in flex flex-col items-center justify-center h-full mt-4">
+                
+                <!-- 神社の画像 -->
+                <img src="./images/bg_shrine.png" 
+                     onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'250\' viewBox=\'0 0 400 250\'%3E%3Crect width=\'400\' height=\'250\' fill=\'%23e2e8f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' font-size=\'16\' font-family=\'sans-serif\' text-anchor=\'middle\' dominant-baseline=\'middle\' fill=\'%2364748b\'%3E⛩️ 神社の画像 (bg_shrine.png)%3C/text%3E%3C/svg%3E';" 
+                     class="w-full h-56 object-cover rounded-xl shadow-md mb-8 border-2 border-[#f0eadd]" alt="四季の神社">
+
+                <p class="mb-8 text-sm leading-loose text-gray-600 font-bold">
+                    鳥居をくぐり、神前に進みましょう。<br>
+                    心を静めて、参拝から始めます。
+                </p>
+                <button onclick="startWorship()" class="bg-[#c04f4f] text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-[#a03d3d] transition-colors w-4/5 text-lg flex items-center justify-center mx-auto">
+                    <span class="mr-2">⛩️</span> 参拝へ進む
+                </button>
+            </div>
+
+            <!-- 【画面2】 参拝ステップ画面 -->
+            <div id="screen-worship" class="hidden text-center w-full flex flex-col items-center justify-center h-full">
+                
+                <!-- アクション1: 鈴 -->
+                <div id="action-1" class="worship-action w-full flex flex-col items-center">
+                    <div class="h-32 flex items-center justify-center mb-6">
+                        <div id="shrine-bell" class="text-6xl cursor-pointer" onclick="ringBell()">🔔</div>
+                    </div>
+                    <p class="text-lg font-bold text-[#5c4d43] mb-6">まずは、鈴を鳴らしてください</p>
+                    <button onclick="ringBell()" class="border-2 border-[#c04f4f] text-[#c04f4f] px-8 py-3 rounded-full font-bold hover:bg-red-50 transition-colors">
+                        鈴を鳴らす
+                    </button>
+                </div>
+
+                <!-- アクション2: お賽銭 -->
+                <div id="action-2" class="hidden worship-action w-full flex flex-col items-center">
+                    <div class="h-32 flex flex-col items-center justify-end mb-6 relative">
+                        <div id="shrine-coin" class="text-4xl absolute top-0 opacity-0">🪙</div>
+                        <div class="w-32 h-16 bg-[#5c4d43] rounded-t-lg border-t-8 border-[#3d322c] flex items-center justify-center text-white text-xs">賽銭箱</div>
+                    </div>
+                    <p class="text-lg font-bold text-[#5c4d43] mb-6">神様へご挨拶のお賽銭を</p>
+                    <button onclick="dropCoin()" class="border-2 border-[#d4a373] text-[#c8925e] px-8 py-3 rounded-full font-bold hover:bg-orange-50 transition-colors">
+                        お賽銭を入れる
+                    </button>
+                </div>
+
+                <!-- アクション3: 二礼二拍手一礼 -->
+                <div id="action-3" class="hidden worship-action w-full flex flex-col items-center">
+                    <div class="h-32 flex items-center justify-center mb-6">
+                        <div id="bow-clap-text" class="text-2xl font-bold text-[#c04f4f] tracking-widest leading-loose h-full flex items-center">🙏</div>
+                    </div>
+                    <p class="text-lg font-bold text-[#5c4d43] mb-6">作法に則り、ご挨拶をします</p>
+                    <button id="btn-bow-clap" onclick="doBowClap()" class="bg-[#5c4d43] text-white px-8 py-3 rounded-full font-bold hover:bg-[#3d322c] transition-colors">
+                        二礼二拍手一礼 をする
+                    </button>
+                </div>
+
+                <!-- アクション4: おみくじへ -->
+                <div id="action-4" class="hidden worship-action w-full flex flex-col items-center">
+                    <div class="h-32 flex items-center justify-center mb-6">
+                        <span class="text-5xl">✨</span>
+                    </div>
+                    <p class="text-lg font-bold text-[#5c4d43] mb-6">ご挨拶が届きました。<br>それでは、おみくじを引きましょう。</p>
+                    <button onclick="drawOmikuji()" class="bg-[#d4a373] text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-[#c8925e] transition-colors w-4/5 text-lg">
+                        みくじ筒を振る
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- 【画面3】 おみくじ筒（ロード）画面 -->
+            <div id="screen-loading" class="hidden text-center w-full flex flex-col items-center justify-center h-full">
+                <div class="omikuji-container mb-8">
+                    <div id="omikuji-stick" class="omikuji-stick"></div>
+                    <div id="omikuji-cylinder" class="omikuji-cylinder">御神籤</div>
+                </div>
+                <p class="text-[#5c4d43] animate-pulse font-bold">神使が言葉を選んでいます...</p>
+            </div>
+
+            <!-- 【画面4】 結果画面 -->
+            <div id="screen-result" class="hidden w-full pb-8">
+                <!-- ここにJavaScriptで結果が挿入されます -->
+            </div>
+
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // --- 1. おみくじのデータ (.png形式に対応) ---
+        const omikujiData = [
+            {
+                season: "夏", animal: "龍", fortune: "大吉", emoji: "🐉",
+                img: "./images/dragon.png", amuletImg: "./images/amulet_dragon.png",
+                color: "bg-blue-50 text-blue-900 border-blue-200", btnColor: "bg-blue-600 hover:bg-blue-700",
+                patterns: [
+                    { msg: "今のあなたは、天に昇る龍のような強い運気の中にいます。迷いを捨てて、ずっと温めてきた願いを行動に移す時です。宇宙はあなたの味方です。", action: "夜空を見上げ、天の川に願いを届けるイメージで深呼吸をする。", amulet: "星座モチーフの小物、またはキラキラ光るアクセサリー" },
+                    { msg: "運気の流れが最高潮に達しています。自分の可能性を信じ、少し大胆すぎるくらいの目標を立ててみてください。想像以上の結果が待っています。", action: "叶えたい願いを紙に書き出し、声に出して三回読んでみる。", amulet: "龍の鱗のような多面カットのクリスタル" },
+                    { msg: "周囲との調和の中で、あなたの才能が大きく花開きます。リーダーシップを発揮したり、新しいアイデアを提案したりするのに最適な日です。堂々と進んでください。", action: "太陽の光を浴びて、体中にエネルギーが満ちるのを感じる。", amulet: "ゴールドカラーのアイテム" }
+                ]
+            },
+            {
+                season: "秋", animal: "狐", fortune: "中吉", emoji: "🦊",
+                img: "./images/fox.png", amuletImg: "./images/amulet_fox.png",
+                color: "bg-orange-50 text-orange-900 border-orange-200", btnColor: "bg-orange-500 hover:bg-orange-600",
+                patterns: [
+                    { msg: "これまでの努力が実を結び、成果を受け取る時期です。得られた経験（知恵）を整理し、次に何が必要かを見極めることで、さらに運気が安定します。", action: "頭の中にある「やるべきこと」をすべて書き出し、優先順位をつける。", amulet: "お気に入りの手帳、書き心地の良いペン" },
+                    { msg: "直感が冴え渡っています。「なんとなく」感じた予感や、ふと思いついたアイデアを大切にしてください。それが未来の大きな収穫に繋がります。", action: "静かな場所で温かいお茶を飲み、五感を研ぎ澄ます時間を持つ。", amulet: "もみじの葉、または秋色のスカーフ" },
+                    { msg: "知識や情報の整理（デトックス）が幸運のカギです。不要な思い込みを手放し、心をクリアにすることで、本当に必要な知恵が巻物のように開かれます。", action: "本棚やスマホのデータを整理し、スペースを作る。", amulet: "古書、またはアンティーク調の雑貨" }
+                ]
+            },
+            {
+                season: "冬", animal: "蛇", fortune: "吉", emoji: "🐍",
+                img: "./images/snake.png", amuletImg: "./images/amulet_snake.png",
+                color: "bg-indigo-50 text-indigo-900 border-indigo-200", btnColor: "bg-indigo-500 hover:bg-indigo-600",
+                patterns: [
+                    { msg: "静かに自分自身を見つめ直す、尊い時間です。心の中にある滞りや、古いこだわりを雪解け水のようにスーッと流してしまいましょう。新しい自分が再生します。", action: "部屋の空気を入れ替え、お香やアロマで空間を浄化する。", amulet: "天然石のブレスレット、心が落ち着く香りのアイテム" },
+                    { msg: "今は無理に動かず、力を蓄える時です。知識を深めたり、体を休めたりすることで、春に芽吹くための強い根が育ちます。静寂を味方にしてください。", action: "好きな本をゆっくり読むか、静かな音楽を聴いて過ごす。", amulet: "白いハンカチ、または陶器の小物" },
+                    { msg: "「脱皮」のタイミングが近づいています。過去の失敗や後悔を手放し、まっさらな気持ちで未来を見つめてください。水辺のような清らかな心が幸運を呼びます。", action: "洗面所やトイレなど、水回りを少しだけ丁寧に掃除する。", amulet: "鏡、またはガラス細工" }
+                ]
+            },
+            {
+                season: "春", animal: "兎", fortune: "小吉", emoji: "🐇",
+                img: "./images/rabbit.png", amuletImg: "./images/amulet_rabbit.png",
+                color: "bg-pink-50 text-pink-900 border-pink-200", btnColor: "bg-pink-400 hover:bg-pink-500",
+                patterns: [
+                    { msg: "春の訪れとともに、新しい運気の種が蒔かれました。焦らず、まずは目の前の小さな楽しいことから始めてみましょう。ウサギのように軽やかに跳ねる準備です。", action: "いつかやりたいと思っていたことを一つだけリサーチしてみる。", amulet: "ふわふわした素材のポーチ、またはタンポポ色の小物" },
+                    { msg: "小さな喜び（タンポポ）を見つけるのが上手な日です。日々の生活の中にある「幸せ」に気づくことで、運気の芽がすくすくと育ちます。笑顔を忘れずに。", action: "散歩をして、季節の移ろいや自然の美しさを感じる。", amulet: "勾玉モチーフのアクセサリー、または小さな鈴" },
+                    { msg: "これから大きな飛躍をするための準備期間です。今は基礎を固めたり、必要なものを揃えたりすることに集中してください。蒔いた種は必ず芽を出します。", action: "未来の自分へのメッセージを、手帳の端に書き留めておく。", amulet: "稲穂のドライフラワー、または木製のアイテム" }
+                ]
+            }
+        ];
+
+        // --- 画面要素 ---
+        const screenHome = document.getElementById('screen-home');
+        const screenWorship = document.getElementById('screen-worship');
+        const screenLoading = document.getElementById('screen-loading');
+        const screenResult = document.getElementById('screen-result');
+
+        // --- 参拝の進行管理 ---
+        function startWorship() {
+            screenHome.classList.add('hidden');
+            screenWorship.classList.remove('hidden');
+            showWorshipStep(1);
+        }
+
+        function showWorshipStep(stepNumber) {
+            for(let i = 1; i <= 4; i++) {
+                document.getElementById(`action-${i}`).classList.add('hidden');
+                document.getElementById(`action-${i}`).classList.remove('fade-in');
+            }
+            const currentAction = document.getElementById(`action-${stepNumber}`);
+            currentAction.classList.remove('hidden');
+            currentAction.classList.add('fade-in');
+        }
+
+        function ringBell() {
+            const bell = document.getElementById('shrine-bell');
+            bell.classList.add('animate-bell');
+            setTimeout(() => {
+                bell.classList.remove('animate-bell');
+                showWorshipStep(2);
+            }, 1000);
+        }
+
+        function dropCoin() {
+            const coin = document.getElementById('shrine-coin');
+            coin.classList.add('animate-coin');
+            setTimeout(() => {
+                coin.classList.remove('animate-coin');
+                showWorshipStep(3);
+            }, 1200);
+        }
+
+        function doBowClap() {
+            const btn = document.getElementById('btn-bow-clap');
+            btn.disabled = true;
+            
+            const textElement = document.getElementById('bow-clap-text');
+            const sequence = ["二礼", "二礼", "二拍手！", "一礼"];
+            let i = 0;
+            
+            textElement.innerHTML = sequence[i];
+            
+            const interval = setInterval(() => {
+                i++;
+                if (i < sequence.length) {
+                    textElement.innerHTML = sequence[i];
+                } else {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        textElement.innerHTML = "🙏";
+                        showWorshipStep(4);
+                    }, 800);
+                }
+            }, 800);
+        }
+
+        // --- みくじ筒のアニメーションと結果表示 ---
+        function drawOmikuji() {
+            screenWorship.classList.add('hidden');
+            screenLoading.classList.remove('hidden');
+            
+            const cylinder = document.getElementById('omikuji-cylinder');
+            const stick = document.getElementById('omikuji-stick');
+            
+            // 筒を振る
+            cylinder.classList.add('animate-shake-cylinder');
+            
+            setTimeout(() => {
+                // 振るのを止めて、棒を出す
+                cylinder.classList.remove('animate-shake-cylinder');
+                stick.classList.add('animate-stick-out');
+                
+                setTimeout(() => {
+                    // 棒が出た後、結果画面へ
+                    showResult();
+                }, 1000);
+            }, 1500); 
+        }
+
+        function showResult() {
+            const randomSeasonIndex = Math.floor(Math.random() * omikujiData.length);
+            const selectedSeason = omikujiData[randomSeasonIndex];
+
+            const randomPatternIndex = Math.floor(Math.random() * selectedSeason.patterns.length);
+            const selectedPattern = selectedSeason.patterns[randomPatternIndex];
+
+            const createFallbackImg = (emoji, text) => `data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f1f5f9'/%3E%3Ctext x='50%25' y='50%25' font-size='24' font-family='sans-serif' text-anchor='middle' dominant-baseline='middle' fill='%2364748b'%3E${emoji} ${text} 画像準備中%3C/text%3E%3C/svg%3E`;
+
+            screenResult.innerHTML = `
+                <div class="fade-in mt-4">
+                    <div class="relative bg-white rounded-xl shadow-md p-4 mb-6 border-t-4 ${selectedSeason.color.split(' ')[2]}">
+                        <img src="${selectedSeason.img}" 
+                             onerror="this.onerror=null; this.src='${createFallbackImg(selectedSeason.emoji, selectedSeason.animal)}';" 
+                             class="w-full h-48 object-cover rounded-lg mb-4 shadow-sm" alt="${selectedSeason.animal}">
+                        
+                        <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-white px-6 py-2 rounded-full shadow-md border ${selectedSeason.color.split(' ')[2]}">
+                            <h2 class="text-2xl font-bold ${selectedSeason.color.split(' ')[1]} tracking-widest">${selectedSeason.fortune}</h2>
+                        </div>
+                        
+                        <p class="text-center text-sm font-bold text-gray-500 mb-2 mt-4">〜 ${selectedSeason.season}の神使・${selectedSeason.animal}のお告げ 〜</p>
+                        <p class="text-gray-700 leading-relaxed text-sm p-2">
+                            ${selectedPattern.msg}
+                        </p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-md p-5 mb-6 border-l-4 ${selectedSeason.color.split(' ')[2]}">
+                        <h3 class="font-bold text-gray-800 mb-2 flex items-center text-sm">
+                            <span class="mr-2">✨</span> 開運アクション
+                        </h3>
+                        <p class="text-sm text-gray-600">${selectedPattern.action}</p>
+                    </div>
+
+                    <div class="${selectedSeason.color.split(' ')[0]} rounded-xl shadow-md p-5 mb-8 border ${selectedSeason.color.split(' ')[2]} text-center">
+                        <h3 class="font-bold ${selectedSeason.color.split(' ')[1]} mb-3 flex items-center justify-center text-sm">
+                            <span class="mr-2">🎀</span> 今日のラッキーお守り
+                        </h3>
+                        
+                        <img src="${selectedSeason.amuletImg}" 
+                             onerror="this.onerror=null; this.src='${createFallbackImg("⛩️", "お守り")}';" 
+                             class="w-32 h-32 mx-auto object-cover rounded-lg mb-3 shadow-sm border-2 border-white" alt="お守り">
+                        
+                        <p class="text-xs ${selectedSeason.color.split(' ')[1]} font-bold mb-4">${selectedPattern.amulet}</p>
+                        
+                        <a href="${selectedSeason.amuletImg}" download="${selectedSeason.season}_omamori.png" 
+                           class="inline-block ${selectedSeason.btnColor} text-white text-xs px-6 py-3 rounded-full font-bold shadow-md transition-colors">
+                           ↓ お守り画像を保存する
+                        </a>
+                    </div>
+
+                    <div class="text-center">
+                        <button onclick="resetOmikuji()" class="text-gray-500 underline text-sm hover:text-gray-800">
+                            鳥居の前に戻る
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            screenLoading.classList.add('hidden');
+            screenResult.classList.remove('hidden');
+            document.getElementById('main-content').scrollTop = 0;
+        }
+
+        function resetOmikuji() {
+            document.getElementById('omikuji-stick').classList.remove('animate-stick-out');
+            screenResult.classList.add('hidden');
+            screenHome.classList.remove('hidden');
+            screenResult.innerHTML = ''; 
+        }
+    </script>
+</body>
+</html>
